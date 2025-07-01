@@ -16,7 +16,7 @@
         engine.setHardwareScalingLevel(1);
 
         // Custom loading screen
-        /*BABYLON.DefaultLoadingScreen.prototype.displayLoadingUI = function () {
+        BABYLON.DefaultLoadingScreen.prototype.displayLoadingUI = function () {
           if (this._isLoading) return;
           this._isLoading = true;
 
@@ -40,7 +40,7 @@
           loadingImage.src = drupalSettings.path.baseUrl + 'sites/default/files/babylonjs_viewer/screen-load.png';
           loadingDiv.appendChild(loadingImage);
           canvas.parentElement.appendChild(loadingDiv);
-        };*/
+        };
 
         BABYLON.DefaultLoadingScreen.prototype.hideLoadingUI = function () {
           const loadingDiv = document.getElementById('customLoadingScreenDiv');
@@ -65,17 +65,24 @@
         };
 
         if (type === 'video') {
-          new BABYLON.VideoDome("video", [fileUrl], {
+          const videoDome = new BABYLON.VideoDome("video", [fileUrl], {
             resolution: 64,
             size: 1000,
             autoPlay: true,
             clickToPlay: true,
           }, scene);
+          videoDome.videoTexture.video.addEventListener('canplaythrough', function () {
+            engine.hideLoadingUI();
+          });
         } else {
-          new BABYLON.PhotoDome("panorama", fileUrl, {
+          const photoDome = new BABYLON.PhotoDome("panorama", fileUrl, {
             resolution: 64,
             size: 1000
           }, scene);
+
+          photoDome.texture.onLoadObservable.addOnce(() => {
+            engine.hideLoadingUI();
+          });
         }
 
         const controls = element.querySelector('.viewer-controls');
