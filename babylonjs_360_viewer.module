@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function babylonjs_360_viewer_theme($existing, $type, $theme, $path) {
+  return [
+    'babylonjs_360_viewer' => [
+      'variables' => [
+        'file_url' => NULL,
+        'type' => NULL,
+      ],
+      'template' => 'babylonjs-360-viewer',
+      'render element' => 'element',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function babylonjs_360_viewer_preprocess_babylonjs_360_viewer(array &$variables) {
+  // Adjunta la librería solo si no fue agregada desde el formatter
+  if (empty($variables['#attached']['library'])) {
+    $variables['#attached']['library'][] = 'babylonjs_360_viewer/babylonjs_360_viewer';
+  }
+
+  // Pasa file_url y type al template si son definidos
+  if (isset($variables['file_url'])) {
+    $variables['content']['#attributes']['file_url'] = $variables['file_url'];
+  }
+  if (isset($variables['type'])) {
+    $variables['content']['#attributes']['type'] = $variables['type'];
+  }
+}

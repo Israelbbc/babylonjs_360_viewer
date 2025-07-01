@@ -1,0 +1,7 @@
+name: 'INAH BabylonJS 360 Viewer'
+type: module
+description: 'Visor interactivo de imágenes y videos 360° usando Babylon.js (PhotoDome / VideoDome)'
+package: Media
+core_version_requirement: ^9.1 || ^10 || ^11
+dependencies:
+  - token:token

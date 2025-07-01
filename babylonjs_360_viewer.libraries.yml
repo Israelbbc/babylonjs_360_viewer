@@ -1,0 +1,14 @@
+babylonjs_360_viewer:
+  version: 1.x
+  js:
+    https://cdn.babylonjs.com/babylon.js: { type: external, minified: true }
+    https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js: { type: external }
+    js/babylonjs_360_viewer.js: {}
+  css:
+    theme:
+      css/babylonjs_360_viewer.css: {}
+      https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css: { type: external }
+  dependencies:
+    - core/drupal
+    - core/once
+    - core/drupalSettings
