@@ -8,6 +8,7 @@ babylonjs_360_viewer:
     theme:
       css/babylonjs_360_viewer.css: {}
       https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css: { type: external }
+      https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200: { type: external }
   dependencies:
     - core/drupal
     - core/once
