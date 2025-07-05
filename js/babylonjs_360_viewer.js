@@ -64,16 +64,179 @@
           target: camera.target.clone()
         };
 
+        let videoDome = null;
+
         if (type === 'video') {
-          const videoDome = new BABYLON.VideoDome("video", [fileUrl], {
+          videoDome = new BABYLON.VideoDome("video", [fileUrl], {
             resolution: 64,
             size: 1000,
             autoPlay: true,
-            clickToPlay: true,
+            clickToPlay: true
           }, scene);
+          
           videoDome.videoTexture.video.addEventListener('canplaythrough', function () {
             engine.hideLoadingUI();
           });
+
+           const controlsHTML = `
+            <div class="video-controls">
+              <div class="volume-container">
+                <button id="muteToggleBtn" title="Mute"><i class="material-symbols-outlined">no_sound</i></button>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+              </div>
+              <button id="playPauseBtn" title="Play/Pause"><i class="material-symbols-outlined">pause</i></button>
+              <div class="progress-wrapper">
+                <input type="range" id="progressBar" value="0" min="0">
+              </div>
+            </div>`;
+
+          element.insertAdjacentHTML('beforeend', controlsHTML);
+
+          const video = videoDome.videoTexture.video;
+          const playPauseBtn = element.querySelector('#playPauseBtn');
+          const muteToggleBtn = element.querySelector('#muteToggleBtn');
+          const volumeSlider = element.querySelector('#volumeSlider');
+          const progressBar = element.querySelector('#progressBar');
+          const volumeContainer = element.querySelector('.volume-container');
+          let hideTimeout;
+          let isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+          let interactingWithVolume;
+          let lastVolumeBeforeMute = 1;
+          const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+          let wasPlaying = false;
+
+
+          // Botón play/pause
+          video.addEventListener('play', () => {
+            playPauseBtn.innerHTML = '<i class="material-symbols-outlined">pause</i>';
+          });
+
+          video.addEventListener('pause', () => {
+            playPauseBtn.innerHTML = '<i class="material-symbols-outlined">play_arrow</i>';
+          });
+
+          playPauseBtn.addEventListener('click', () => {
+            if (video.paused) {
+              video.play();
+              playPauseBtn.innerHTML = '<i class="material-symbols-outlined">pause</i>';
+            } else {
+              video.pause();
+              playPauseBtn.innerHTML = '<i class="material-symbols-outlined">play_arrow</i>';
+            }
+          });
+
+          // Mostrar barra volumen en click o touch
+          const showVolumeSlider = () => {
+            clearTimeout(hideTimeout);
+            volumeSlider.classList.add('visible');
+          };
+
+          const hideVolumeSlider = () => {
+            if (!interactingWithVolume) {
+              hideTimeout = setTimeout(() => {
+                volumeSlider.classList.remove('visible');
+                console.log('Visible removed');
+              }, 1500);
+            }
+          };
+
+          // Detener ocultamiento mientras el usuario interactúa
+          volumeSlider.addEventListener('mousedown', () => {
+            interactingWithVolume = true;
+            clearTimeout(hideTimeout);
+          });
+          volumeSlider.addEventListener('touchstart', () => {
+            interactingWithVolume = true;
+            clearTimeout(hideTimeout);
+          });
+
+          volumeSlider.addEventListener('input', () => {
+            clearTimeout(hideTimeout);
+          });
+
+          ['mouseup', 'touchend'].forEach(evt =>
+            volumeSlider.addEventListener(evt, () => {
+              interactingWithVolume = false;
+              hideVolumeSlider();
+            })
+          );
+
+          // Eventos para dispositivos táctiles
+          muteToggleBtn.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            showVolumeSlider();
+            hideVolumeSlider();
+          });
+
+          // Evento universal para clic
+          muteToggleBtn.addEventListener('click', (e) => {
+            showVolumeSlider();
+            hideVolumeSlider();
+
+          if (video.muted) {
+              // Al desmutear, restaurar el último volumen
+              video.muted = false;
+              video.volume = lastVolumeBeforeMute;
+              volumeSlider.value = lastVolumeBeforeMute;
+              muteToggleBtn.innerHTML = '<i class="material-symbols-outlined">brand_awareness</i>';
+            } else {
+              // Al mutear, guardar el volumen actual y poner a 0
+              lastVolumeBeforeMute = video.volume;
+              video.muted = true;
+              volumeSlider.value = 0;
+              muteToggleBtn.innerHTML = '<i class="material-symbols-outlined">no_sound</i>';
+            }
+          });
+
+          if (!isTouchDevice) {
+            volumeContainer.addEventListener('mouseenter', showVolumeSlider);
+            volumeContainer.addEventListener('mouseleave', hideVolumeSlider);
+          }
+
+          volumeSlider.addEventListener('input', () => {
+            const newVolume = parseFloat(volumeSlider.value);
+            video.volume = newVolume;
+            
+            // Actualizar estado de mute basado en el volumen
+            if (newVolume > 0) {
+                video.muted = false;
+                muteToggleBtn.innerHTML = '<i class="material-symbols-outlined">brand_awareness</i>';
+                // Guardar el nuevo volumen como último volumen válido
+                lastVolumeBeforeMute = newVolume;
+              } else {
+                video.muted = true;
+                muteToggleBtn.innerHTML = '<i class="material-symbols-outlined">no_sound</i>';
+              }
+          });
+
+          video.addEventListener('loadedmetadata', () => {
+            progressBar.max = video.duration;
+          });
+
+          video.addEventListener('timeupdate', () => {
+            progressBar.value = video.currentTime;
+          });
+
+          progressBar.addEventListener('input', () => {
+            if (isFirefox) {
+              wasPlaying = !video.paused; // guarda el estado en Firefox
+              video.pause(); // detiene el avance en falso
+            }
+            video.currentTime = progressBar.value;
+          });
+          progressBar.addEventListener('change', () => {
+            video.currentTime = progressBar.value;
+
+            if (isFirefox && wasPlaying) {
+              video.play();
+            }
+
+            // Actualiza el icono del botón de play/pause
+            playPauseBtn.innerHTML = video.paused
+              ? '<i class="material-symbols-outlined">play_arrow</i>'
+              : '<i class="material-symbols-outlined">pause</i>';
+          });
+
         } else {
           const photoDome = new BABYLON.PhotoDome("panorama", fileUrl, {
             resolution: 64,
